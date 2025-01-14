@@ -75,3 +75,19 @@ CIFAR-100数据集由60000张32×32的RGB彩色图片构成，共100个类别；
 # 实验结果
 
 ![](https://raw.githubusercontent.com/ShengqianChen/2025-sam/refs/heads/main/work/save/cifar10_sam_sgd_adam_without_momentum_without_StepLR.png)
+
+------
+
+# 项目内容
+
+SAM.py代码文件中实现了所有有关SAM优化器的代码，并添加详细注释。
+
+work文件夹中存放了所有实验相关的代码，下面介绍其中各文件夹：
+
+    data文件夹中存放了实验使用的数据集，cifar.py文件用于对数据实现预处理。
+
+    model文件夹中存放了loss损失函数的代码和WRN模型架构的代码，默认架构为WRN16-8。
+
+    utility文件夹中存放了输出信息的辅助代码、用于数据预处理的CutOut代码、用于动态调整学习率的代码
+
+    save文件夹中存放了所有实验保存的模型和实验过程，里面的所有图片可以通过work文件夹下的plot.py代码文件生成。
