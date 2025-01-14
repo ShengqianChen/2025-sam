@@ -1,225 +1,76 @@
-<h1 align="center"><b>(Adaptive) SAM Optimizer</b></h1>
-<h3 align="center"><b>Sharpness-Aware Minimization for Efficiently Improving Generalization</b></h3>
-<p align="center">
-  <i>~ in Pytorch ~</i>
-</p> 
- 
---------------
+# 实验环境
 
-<br>
+主要工作包及版本如下：
 
-SAM simultaneously minimizes loss value and loss sharpness. In particular, it seeks parameters that lie in **neighborhoods having uniformly low loss**. SAM improves model generalization and yields [SoTA performance for several datasets](https://paperswithcode.com/paper/sharpness-aware-minimization-for-efficiently-1). Additionally, it provides robustness to label noise on par with that provided by SoTA procedures that specifically target learning with noisy labels.
+PyTorch  2.5.1
 
-This is an **unofficial** repository for [Sharpness-Aware Minimization for Efficiently Improving Generalization](https://arxiv.org/abs/2010.01412) and [ASAM: Adaptive Sharpness-Aware Minimization for Scale-Invariant Learning of Deep Neural Networks](https://arxiv.org/abs/2102.11600). Implementation-wise, SAM class is a light wrapper that computes the regularized "sharpness-aware" gradient, which is used by the underlying optimizer (such as SGD with momentum). This repository also includes a simple [WRN for Cifar10](example); as a proof-of-concept, it beats the performance of SGD with momentum on this dataset.
+Python  3.12
 
-<p align="center">
-  <img src="img/loss_landscape.png" alt="Loss landscape with and without SAM" width="512"/>  
-</p>
+Ubuntu22.04
 
-<p align="center">
-  <sub><em>ResNet loss landscape at the end of training with and without SAM. Sharpness-aware updates lead to a significantly wider minimum, which then leads to better generalization properties.</em></sub>
-</p>
+Cuda  12.4
 
-<br>
+Torchvision 0.11.1
 
-## Usage
+其余各工作包版本可见于2025-sam/requirements.txt
 
-It should be straightforward to use SAM in your training pipeline. Just keep in mind that the training will run twice as slow, because SAM needs two forward-backward passes to estime the "sharpness-aware" gradient. If you're using gradient clipping, make sure to change only the magnitude of gradients, not their direction.
+------
 
-```python
-from sam import SAM
-...
+# 数据集下载
 
-model = YourModel()
-base_optimizer = torch.optim.SGD  # define an optimizer for the "sharpness-aware" update
-optimizer = SAM(model.parameters(), base_optimizer, lr=0.1, momentum=0.9)
-...
+根据选择的网络架构WRN主要在图像任务上进行实验，所以选择经典图像任务数据集Cifar-10和CIFAR-100作为实验运行的数据集，保存在work/data
 
-for input, output in data:
+Cifar-10数据集由60000张32×32的RGB彩色图片构成，共10个类别；50000张训练，10000张测试，下载网址 http://www.cs.toronto.edu/~kriz/cifar.html。
 
-  # first forward-backward pass
-  loss = loss_function(output, model(input))  # use this loss for any training statistics
-  loss.backward()
-  optimizer.first_step(zero_grad=True)
-  
-  # second forward-backward pass
-  loss_function(output, model(input)).backward()  # make sure to do a full forward pass
-  optimizer.second_step(zero_grad=True)
-...
-```
+CIFAR-100数据集由60000张32×32的RGB彩色图片构成，共100个类别；50000张训练，10000张测试,数据库下载网址：http://www.cs.toronto.edu/~kriz/cifar.html。
 
-<br>
+------
 
-**Alternative usage with a single closure-based `step` function**. This alternative offers similar API to native PyTorch optimizers like LBFGS (kindly suggested by [@rmcavoy](https://github.com/rmcavoy)):
+# 运行方式
 
-```python
-from sam import SAM
-...
+超参数的交叉搜索由work文件夹下的grid_search_rho.py文件完成。
 
-model = YourModel()
-base_optimizer = torch.optim.SGD  # define an optimizer for the "sharpness-aware" update
-optimizer = SAM(model.parameters(), base_optimizer, lr=0.1, momentum=0.9)
-...
+使用SGD优化器的WRN训练由work文件夹下的train_sgd.py文件完成。
 
-for input, output in data:
-  def closure():
-    loss = loss_function(output, model(input))
-    loss.backward()
-    return loss
+使用Adam优化器的WRN训练由work文件夹下的train_adam.py文件完成。
 
-  loss = loss_function(output, model(input))
-  loss.backward()
-  optimizer.step(closure)
-  optimizer.zero_grad()
-...
-```
+使用SAM优化器的WRN训练由work文件夹下的train_sam.py文件夹完成。
 
-### Training tips
-- [@hjq133](https://github.com/hjq133): The suggested usage can potentially cause problems if you use batch normalization. The running statistics are computed in both forward passes, but they should be computed only for the first one. A possible solution is to set BN momentum to zero (kindly suggested by [@ahmdtaha](https://github.com/ahmdtaha)) to bypass the running statistics during the second pass. An example usage is on lines [51](https://github.com/davda54/sam/blob/cdcbdc1574022d3a3c3240da136378c38562d51d/example/train.py#L51) and [58](https://github.com/davda54/sam/blob/cdcbdc1574022d3a3c3240da136378c38562d51d/example/train.py#L58) in [example/train.py](https://github.com/davda54/sam/blob/cdcbdc1574022d3a3c3240da136378c38562d51d/example/train.py):
-```python
-for batch in dataset.train:
-  inputs, targets = (b.to(device) for b in batch)
+使用ASAM优化器的WRN训练由work文件夹下的train_asam.py文件夹完成。
 
-  # first forward-backward step
-  enable_running_stats(model)  # <- this is the important line
-  predictions = model(inputs)
-  loss = smooth_crossentropy(predictions, targets)
-  loss.mean().backward()
-  optimizer.first_step(zero_grad=True)
+训练文件皆可以使用通过终端传递参数的方式调整训练细节，具体如下：
 
-  # second forward-backward step
-  disable_running_stats(model)  # <- this is the important line
-  smooth_crossentropy(model(inputs), targets).mean().backward()
-  optimizer.second_step(zero_grad=True)
-```
+| 参数名称 | 默认值 | 类型 | 描述 |
+| -- | -- | -- | -- |
+| adaptive | False | bool | 是否使用自适应 SAM (Adaptive SAM)。默认不使用。 |
+| batch_size | 256 | int | 训练和验证循环中使用的批量大小。默认为 256。 |
+| depth | 16 | int | 网络层数。 |
+| dropout | 0.0 | float | Dropout 比率。默认无 Dropout。 |
+| epochs | 10 | int | 总共的训练周期数。默认为 10。 |
+| label_smoothing | 0.1 | float | 标签平滑参数。使用 0.0 表示不进行标签平滑。 |
+| learning_rate | 0.1 | float | 训练开始时的基础学习率。默认为 0.1。 |
+| momentum | 0.9 | float | SGD 优化器的动量参数。 |
+| threads | 2 | int | 数据加载器使用的 CPU 线程数。 |
+| rho | 0.5 | int | SAM 的 Rho 参数。 |
+| weight_decay | 0.0005 | float | L2 权重衰减参数。 |
+| width_factor | 8 | int | 相比普通 ResNet，模型宽度的倍数。 |
+| model_save_path | model.pth | str | 保存训练模型的路径。默认为 "model.pth"。 |
+| log_save_path | train_log.txt | str | 保存训练日志的路径。默认为 "train_log.txt"。 |
 
-- [@evanatyourservice](https://github.com/evanatyourservice): If you plan to train on multiple GPUs, the paper states that *"To compute the SAM update when parallelizing across multiple accelerators, we divide each data batch evenly among the accelerators, independently compute the SAM gradient on each accelerator, and average the resulting sub-batch SAM gradients to obtain the final SAM update."* This can be achieved by the following code:
-```python
-for input, output in data:
-  # first forward-backward pass
-  loss = loss_function(output, model(input))
-  with model.no_sync():  # <- this is the important line
-    loss.backward()
-  optimizer.first_step(zero_grad=True)
-  
-  # second forward-backward pass
-  loss_function(output, model(input)).backward()
-  optimizer.second_step(zero_grad=True)
-```
-- [@evanatyourservice](https://github.com/evanatyourservice): Adaptive SAM reportedly performs better than the original SAM. The ASAM paper suggests to use higher `rho` for the adaptive updates (~10x larger)
+是否使用学习率调整策略可以在各文件代码中的相关内容通过注释完成，如在work文件夹中的train_sam.py第75行：   
+> #scheduler(epoch) #是否采用学习率迭代更新规则
 
-- [@mlaves](https://github.com/mlaves): LR scheduling should be either applied to the base optimizer or you should use SAM with a single `step` call (with a closure):
-```python
-scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer.base_optimizer, T_max=200)
-```
-- [@AlbertoSabater](https://github.com/AlbertoSabater): Integration with Pytorch Lightning — you can write the `training_step` function as:
-```python
-def training_step(self, batch, batch_idx):
-    optimizer = self.optimizers()
+数据集的选择需要调整data/cifar.py里的数据集选择部分代码：
 
-    # first forward-backward pass
-    loss_1 = self.compute_loss(batch)
-    self.manual_backward(loss_1, optimizer)
-    optimizer.first_step(zero_grad=True)
+> train_set = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=train_transform)
 
-    # second forward-backward pass
-    loss_2 = self.compute_loss(batch)
-    self.manual_backward(loss_2, optimizer)
-    optimizer.second_step(zero_grad=True)
+> test_set = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=test_transform)
 
-    return loss_1
-```
-<br>
+同时需要调整训练文件中的模型预测输出通道数，如在work文件夹中的train_sam.py第39行
 
+> model = WideResNet(args.depth, args.width_factor, args.dropout, in_channels=3, labels=10).to(device)
 
-## Documentation
+------
 
-#### `SAM.__init__`
+# 实验结果
 
-| **Argument**    | **Description** |
-| :-------------- | :-------------- |
-| `params` (iterable) | iterable of parameters to optimize or dicts defining parameter groups |
-| `base_optimizer` (torch.optim.Optimizer) | underlying optimizer that does the "sharpness-aware" update |
-| `rho` (float, optional)           | size of the neighborhood for computing the max loss *(default: 0.05)* |
-| `adaptive` (bool, optional)       | set this argument to True if you want to use an experimental implementation of element-wise Adaptive SAM *(default: False)* |
-| `**kwargs` | keyword arguments passed to the `__init__` method of `base_optimizer` |
-
-<br>
-
-#### `SAM.first_step`
-
-Performs the first optimization step that finds the weights with the highest loss in the local `rho`-neighborhood.
-
-| **Argument**    | **Description** |
-| :-------------- | :-------------- |
-| `zero_grad` (bool, optional) | set to True if you want to automatically zero-out all gradients after this step *(default: False)* |
-
-<br>
-
-#### `SAM.second_step`
-
-Performs the second optimization step that updates the original weights with the gradient from the (locally) highest point in the loss landscape.
-
-| **Argument**    | **Description** |
-| :-------------- | :-------------- |
-| `zero_grad` (bool, optional) | set to True if you want to automatically zero-out all gradients after this step *(default: False)* |
-
-<br>
-
-#### `SAM.step`
-
-Performs both optimization steps in a single call. This function is an alternative to explicitly calling `SAM.first_step` and `SAM.second_step`.
-
-| **Argument**    | **Description** |
-| :-------------- | :-------------- |
-| `closure` (callable) | the closure should do an additional full forward and backward pass on the optimized model *(default: None)* |
-
-
-
-
-<br>
-
-## Experiments
-
-I've verified that SAM works on a simple WRN 16-8 model run on CIFAR10; you can replicate the experiment by running [train.py](example/train.py). The Wide-ResNet is enhanced only by label smoothing and the most basic image augmentations with cutout, so the errors are higher than those in the [SAM paper](https://arxiv.org/abs/2010.01412). Theoretically, you can get even lower errors by running for longer (1800 epochs instead of 200), because SAM shouldn't be as prone to overfitting. SAM uses `rho=0.05`, while ASAM is set to `rho=2.0`, as [suggested by its authors](https://github.com/davda54/sam/issues/37).
-
-| Optimizer             | Test error rate |
-| :-------------------- |   -----: |
-| SGD + momentum        |   3.20 % |
-| SAM + SGD + momentum  |   2.86 % |
-| ASAM + SGD + momentum |   2.55 % |
-
-
-<br>
-
-## Cite
-
-Please cite the original authors if you use this optimizer in your work:
-
-```bibtex
-@inproceedings{foret2021sharpnessaware,
-  title={Sharpness-aware Minimization for Efficiently Improving Generalization},
-  author={Pierre Foret and Ariel Kleiner and Hossein Mobahi and Behnam Neyshabur},
-  booktitle={International Conference on Learning Representations},
-  year={2021},
-  url={https://openreview.net/forum?id=6Tm1mposlrM}
-}
-```
-
-```bibtex
-@inproceesings{pmlr-v139-kwon21b,
-  title={ASAM: Adaptive Sharpness-Aware Minimization for Scale-Invariant Learning of Deep Neural Networks},
-  author={Kwon, Jungmin and Kim, Jeongseop and Park, Hyunseo and Choi, In Kwon},
-  booktitle ={Proceedings of the 38th International Conference on Machine Learning},
-  pages={5905--5914},
-  year={2021},
-  editor={Meila, Marina and Zhang, Tong},
-  volume={139},
-  series={Proceedings of Machine Learning Research},
-  month={18--24 Jul},
-  publisher ={PMLR},
-  pdf={http://proceedings.mlr.press/v139/kwon21b/kwon21b.pdf},
-  url={https://proceedings.mlr.press/v139/kwon21b.html},
-  abstract={Recently, learning algorithms motivated from sharpness of loss surface as an effective measure of generalization gap have shown state-of-the-art performances. Nevertheless, sharpness defined in a rigid region with a fixed radius, has a drawback in sensitivity to parameter re-scaling which leaves the loss unaffected, leading to weakening of the connection between sharpness and generalization gap. In this paper, we introduce the concept of adaptive sharpness which is scale-invariant and propose the corresponding generalization bound. We suggest a novel learning method, adaptive sharpness-aware minimization (ASAM), utilizing the proposed generalization bound. Experimental results in various benchmark datasets show that ASAM contributes to significant improvement of model generalization performance.}
-}
-```

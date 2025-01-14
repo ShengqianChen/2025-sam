@@ -130,7 +130,7 @@ dmypy.json
 
 #数据集忽略上传
 example/data/cifar-100-python.tar.gz
-example/data/cifar-100-python
+example/data/cifar-100-python/
 
 #保存模型及数据忽略上传
 example/save/
