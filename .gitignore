@@ -128,6 +128,9 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+#数据集忽略上传
 example/data/cifar-100-python.tar.gz
+example/data/cifar-100-python
 
-save/*
+#保存模型及数据忽略上传
+example/save/
