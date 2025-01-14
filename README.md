@@ -74,7 +74,61 @@ CIFAR-100数据集由60000张32×32的RGB彩色图片构成，共100个类别；
 
 # 实验结果
 
-![](https://raw.githubusercontent.com/ShengqianChen/2025-sam/refs/heads/main/work/save/cifar10_sam_sgd_adam_without_momentum_without_StepLR.png)
+Cifar-10消融实验结果
+
+| optimizer | Loss | ACC |
+| -- | -- | -- |
+| SAM | 0.1999 | 91.89% |
+| SAM + MSGD | 0.1577 | 93.78% |
+| SAM+Steplr | 0.4771 | 79.24% |
+| ASAM | 0.4756 | 81.67% |
+| ASAM+Steplr | 0.1431 | 94.18% |
+| ASAM+MSGD | 0.2310 | 90.78% |
+| SAM+MSGD+Steplr | 0.1007 | 96.04% |
+| ASAM+MSGD+Steplr | 0.0745 | 97.04% |
+
+交叉网格搜索ρ值表
+
+| ρ设定值 | 200个epoch准确率 |
+| -- | -- |
+| 0.01 | 86.56% |
+| 0.02 | 87.00% |
+| 0.05 | 88.28% |
+| 0.1 | 89.94% |
+| 0.2 | 90.72% |
+| 0.5 | 91.80% |
+
+Cifar-10数据集不同优化器对比（训练200个epoch）
+| optimizer | Loss | ACC |
+| -- | -- | -- |
+| Adam | 0.2768 | 88.44% |
+| SGD | 0.2431 | 90.72% |
+| SAM | 0.1999 | 91.89% |
+
+Steplr为动态调整学习率机制，MSGD为动量SGD机制
+
+Cifar-10数据集不同优化器结合优化机制对比（训练200个epoch）
+| optimizer | Loss | ACC |
+| -- | -- | -- |
+| Adam | 0.2768 | 88.44% |
+| SGD | 0.2431 | 90.72% |
+| ASAM+Steplr+MSGD | 0.0744 | 96.91% |
+| SAM+MSGD | 0.1514 | 94.40% |
+
+Cifar-100数据集不同优化器结合优化机制对比
+| optimizer | Loss | ACC |
+| -- | -- | -- |
+| Adam | 1.1039 | 66.37% |
+| MSGD | 0.6604 | 81.12% |
+| ASAM+Steplr+MSGD| 0.6281 | 82.59% |
+| SAM+Steplr+MSGD| 0.5554 | 83.05% |
+
+Cifar-100数据集ρ不同时训练情况
+| optimizer | Loss | ACC |
+| -- | -- | -- |
+| SAM | 0.5554 | 83.05% |
+| ASAM ρ=0.5 | 0.6281 | 82.59% |
+| ASAM ρ=5 | 0.6113 | 83.41% |
 
 ------
 
