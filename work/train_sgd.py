@@ -38,7 +38,7 @@ if __name__ == "__main__":
     log = Log(log_each=10)
     model = WideResNet(args.depth, args.width_factor, args.dropout, in_channels=3, labels=10).to(device)
 
-    optimizer = torch.optim.SGD(model.parameters(), lr = 0.1, momentum = 0.9, weight_decay = 0.0005)
+    optimizer = torch.optim.SGD(model.parameters(), lr = 0.1, weight_decay = 0.0005)
     scheduler = StepLR(optimizer, args.learning_rate, args.epochs)
 
     # 用于存储每个epoch的loss和accuracy
