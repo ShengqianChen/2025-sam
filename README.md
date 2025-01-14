@@ -74,3 +74,4 @@ CIFAR-100数据集由60000张32×32的RGB彩色图片构成，共100个类别；
 
 # 实验结果
 
+![](https://raw.githubusercontent.com/ShengqianChen/2025-sam/refs/heads/main/work/save/cifar10_sam_sgd_adam_without_momentum_without_StepLR.png)
