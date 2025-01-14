@@ -8,6 +8,8 @@ model2_losses = []
 model2_accuracies = []
 model3_losses = []
 model3_accuracies = []
+model4_losses = []
+model4_accuracies = []
 
 # 读取文件中的数据
 def read_data(file_path, losses, accuracies):
@@ -26,21 +28,24 @@ def read_data(file_path, losses, accuracies):
                 print(f"Skipping line due to format issue: {line}")
 
 # 读取三个模型的数据
-read_data('save/Cifar10_sam_without_momentum_without_Steplr.txt', model1_losses, model1_accuracies)
-read_data('save/Cifar10_sgd_without_momentum_without_Steplr.txt', model2_losses, model2_accuracies)
-read_data('save/Cifar10_adam_without_Steplr.txt', model3_losses, model3_accuracies)
+read_data('save/Cifar100_sam.txt', model1_losses, model1_accuracies)
+read_data('save/Cifar100_sgd.txt', model2_losses, model2_accuracies)
+read_data('save/Cifar100_adam.txt', model3_losses, model3_accuracies)
+read_data('save/Cifar100_asam.txt', model4_losses, model4_accuracies)
 
 # 生成epoch的序列
 epochs1 = range(1, len(model1_losses) + 1)
 epochs2 = range(1, len(model2_losses) + 1)
 epochs3 = range(1, len(model3_losses) + 1)
+epochs4 = range(1, len(model4_losses) + 1)
 
 # 绘制loss曲线
 plt.figure(figsize=(12, 6))
 plt.subplot(1, 2, 1)
-plt.plot(epochs1, model1_losses, 'b-', label='Cifar10_sam_without_momentum_without_Steplr Loss')
-plt.plot(epochs2, model2_losses, 'g-', label='Cifar10_sgd_without_momentum_without_Steplr Loss')
-plt.plot(epochs3, model3_losses, 'r-', label='Cifar10_adam_without_Steplr Loss')
+plt.plot(epochs1, model1_losses, 'b-', label='Cifar100_sam')
+plt.plot(epochs2, model2_losses, 'g-', label='Cifar100_sgd')
+plt.plot(epochs3, model3_losses, 'r-', label='Cifar100_adam')
+plt.plot(epochs4, model4_losses, 'y-', label='Cifar100_asam')
 plt.title('Training Loss')
 plt.xlabel('Epoch')
 plt.ylabel('Loss')
@@ -48,15 +53,16 @@ plt.legend()
 
 # 绘制accuracy曲线
 plt.subplot(1, 2, 2)
-plt.plot(epochs1, model1_accuracies, 'b-', label='Cifar10_sam_without_momentum_without_Steplr Accuracy')
-plt.plot(epochs2, model2_accuracies, 'g-', label='Cifar10_sgd_without_momentum_without_Steplr Accuracy')
-plt.plot(epochs3, model3_accuracies, 'r-', label='Cifar10_adam_without_Steplr Accuracy')
+plt.plot(epochs1, model1_accuracies, 'b-', label='Cifar100_sam')
+plt.plot(epochs2, model2_accuracies, 'g-', label='Cifar100_sgd')
+plt.plot(epochs3, model3_accuracies, 'r-', label='Cifar100_adam')
+plt.plot(epochs4, model4_accuracies, 'y-', label='Cifar100_asam')
 plt.title('Training Accuracy')
 plt.xlabel('Epoch')
 plt.ylabel('Accuracy (%)')
 plt.legend()
 
-plt.savefig('save/cifar10_sam_sgd_adam_without_momentum_without_StepLR.png')
+plt.savefig('save/cifar100_sam_sgd_adam_asam.png')
 # 显示图表
 plt.tight_layout()
 plt.show()
